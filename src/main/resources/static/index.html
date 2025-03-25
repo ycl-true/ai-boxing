@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>大模型标注</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #333;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            margin: auto;
+        }
+
+        form {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            margin: auto;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: #007BFF;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            /* 确保按钮水平居中 */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #333;
+            max-width: 500px;
+            width: 100%;
+            margin: auto;
+            display: none; /* 初始状态下隐藏 */
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+
+<h2>请输入5个必填项</h2>
+<h2 style="color: red">待测试的文件夹下的图片超过1280X784时将被调整到此大小并覆盖原图,注意保存</h2>
+<h2 style="color: black">调试地址：https://bailian.console.aliyun.com/?accounttraceid=27e3b76950f64f4591c77404198f59f8msco#/efm/model_experience_center/vision</h2>
+<form id="textOptionsForm">
+    <label for="option1">百炼API-KEY:</label><br>
+    <input type="text" id="option1" name="apiKey" required value="sk-xxx"><br>
+<!--    <input type="text" id="option1" name="apiKey" required value="sk-6a193ca3ef404313b75560835ffdc19"><br>-->
+
+    <label for="option2">百炼模型名称(仅支持qwen2.5-vl-3b-instruct、qwen2.5-vl-7b-instruct、qwen2.5-vl-72b-instruct):</label><br>
+    <input type="text" id="option2" name="apiModel" required value="qwen2.5-vl-72b-instruct"><br>
+
+    <label for="option3">待测试的文件夹路径:</label><br>
+    <input type="text" id="option3" name="apiTestFolder" required value="C:\Users\asus\Desktop\yanwu_1"><br>
+
+    <label for="option4">输出图片的路径(文件夹不存在会自动创建):</label><br>
+    <input type="text" id="option4" name="apiOutputFolder" required value="C:\Users\asus\Desktop\yanwu_1\yanwu_1_72B"><br>
+
+    <label for="option5">提示词(注意返回格式，以下是烟雾检测提示词):</label><br>
+<!--    <input type="text" id="option5" name="apiPrompt" required value="if smokes in the image,detect the smokes and return their json coordinates,if not,return 0"><br><br>-->
+    <textarea id="option5" rows="3" cols="40" name="apiPrompt" required >
+if smokes in the image,detect the smokes and return their json coordinates,if not,return 0</textarea>
+    <br><br>
+
+    <button type="submit" id="submitButton">提交</button>
+</form>
+
+<div id="result">返回结果</div>
+
+<script>
+    document.getElementById('textOptionsForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // 阻止表单默认提交行为
+
+        const formData = new FormData(this); // 获取表单数据
+        const submitButton = document.getElementById('submitButton');
+        // 禁用按钮并更改文本为“等待中”
+        submitButton.disabled = true;
+        submitButton.innerText = '等待中...';
+
+        fetch('/run', { // 发送POST请求到/run接口
+            method: 'POST',
+            body: formData,
+        })
+            .then(response => {
+                if (!response.ok) {
+                    return response.text().then(text => { throw new Error(text); });
+                }
+                return response.text();
+            })
+            .then(data => {
+                document.getElementById('result').innerText = `执行结果: ${data}`;
+                document.getElementById('result').style.display = 'block'; // 显示结果区域
+                document.getElementById('result').style.color = 'black';
+            })
+            .catch((error) => {
+                var jsonObject = JSON.parse(error.message);
+                document.getElementById('result').innerText = '请求出错' + jsonObject.message;
+                document.getElementById('result').style.display = 'block'; // 显示结果区域
+                document.getElementById('result').style.color = 'red';
+            })
+            .finally(() => {
+                // 重新启用按钮并恢复原始文本
+                submitButton.disabled = false;
+                submitButton.innerText = '提交';
+            });
+    });
+</script>
+
+</body>
+</html>
